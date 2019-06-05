@@ -5,6 +5,9 @@
 <img src="screenshot.png" width="864">
 
 
+This fork from _sindresorhus/pure_ add nix-shell information
+
+
 ## Overview
 
 Most prompts are cluttered, ugly and slow. I wanted something visually pleasing that stayed out of my way.
