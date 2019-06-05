@@ -23,6 +23,25 @@
 # \e[K  => clears everything after the cursor on the current line
 # \e[2K => clear everything on the current line
 
+# nix-shell: currently running nix-shell
+prompt_nix_shell() {
+  if [[ -n "$IN_NIX_SHELL" ]]; then
+    if [[ -n $NIX_SHELL_PACKAGES ]]; then
+      local package_names=""
+      local packages=($NIX_SHELL_PACKAGES)
+      for package in $packages; do
+        package_names+=" ${package##*.}"
+      done
+      echo -n "%{%F{yellow}%}{ $package_names }"
+    elif [[ -n $name ]]; then
+      local cleanName=${name#interactive-}
+      cleanName=${cleanName%-environment}
+      echo -n "%{%F{yellow}%}{ $cleanName }"
+    else # This case is only reached if the nix-shell plugin isn't installed or failed in some way
+      echo -n "%{%F{yellow}%}nix-shell {}"
+    fi
+  fi
+}
 
 # turns seconds into human readable time
 # 165392 => 1d 21h 56m 32s
@@ -132,7 +151,7 @@ prompt_pure_preprompt_render() {
 	# Execution time.
 	[[ -n $prompt_pure_cmd_exec_time ]] && preprompt_parts+=('%F{yellow}${prompt_pure_cmd_exec_time}%f')
 
-	local cleaned_ps1=$PROMPT
+  local cleaned_ps1=$(prompt_nix_shell)$PROMPT
 	local -H MATCH MBEGIN MEND
 	if [[ $PROMPT = *$prompt_newline* ]]; then
 		# Remove everything from the prompt until the newline. This
@@ -162,7 +181,6 @@ prompt_pure_preprompt_render() {
 		# Redraw the prompt.
 		zle && zle .reset-prompt
 	fi
-
 	typeset -g prompt_pure_last_prompt=$expanded_prompt
 }
 
@@ -517,9 +535,9 @@ prompt_pure_state_setup() {
 		who_out=$(who -m 2>/dev/null)
 		if (( $? )); then
 			# Who am I not supported, fallback to plain who.
-			local -a who_in
-			who_in=( ${(f)"$(who 2>/dev/null)"} )
-			who_out="${(M)who_in:#*[[:space:]]${TTY#/dev/}[[:space:]]*}"
+      local -a who_in
+      who_in=( ${(f)"$(who 2>/dev/null)"} )
+      who_out="${(M)who_in:#*[[:space:]]${TTY#/dev/}[[:space:]]*}"
 		fi
 
 		local reIPv6='(([0-9a-fA-F]+:)|:){2,}[0-9a-fA-F]+'  # Simplified, only checks partial pattern.
